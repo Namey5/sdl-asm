@@ -23,10 +23,10 @@
 
 .window_title:
     .string "sdl-asm"
-.window_width:
-    .int 1280
-.window_height:
-    .int 720
+.window_default_size:
+    .int 1280, 720
+.window_min_size:
+    .int 640, 480
 .clear_color:
     .byte 63, 127, 255, 255
 
@@ -84,18 +84,24 @@ init_sdl:
 
 create_window:
     mov rdi, OFFSET .window_title
-    mov esi, [.window_width]
-    mov edx, [.window_height]
+    mov esi, [.window_default_size+0]
+    mov edx, [.window_default_size+4]
     mov rcx, [.SDL_WINDOW_RESIZABLE]
     call SDL_CreateWindow
     mov QWORD PTR [rbp-24], rax
     test rax, rax
-    jnz create_renderer
+    jnz set_window_properties
     call SDL_GetError
     mov rsi, rax
     mov rdi, OFFSET .create_window_error
     call printf
     jmp cleanup_sdl
+
+set_window_properties:
+    mov rdi, QWORD PTR [rbp-24]
+    mov esi, [.window_min_size+0]
+    mov edx, [.window_min_size+4]
+    call SDL_SetWindowMinimumSize
 
 create_renderer:
     mov rdi, QWORD PTR [rbp-24]
