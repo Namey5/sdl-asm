@@ -34,34 +34,36 @@
 main:
     push rbp
     mov rbp, rsp
-    sub rsp, 176
+    sub rsp, 160
+    xor eax, eax
     /* char** argv */
     mov QWORD PTR [rbp-8], rsi
     /* int argc */
     mov DWORD PTR [rbp-12], edi
-    /* int result */
-    mov DWORD PTR [rbp-16], 0
-    /* SDL_Window* window */
-    mov QWORD PTR [rbp-24], 0
-    /* SDL_Renderer* renderer */
-    mov QWORD PTR [rbp-32], 0
-    /* SDL_Event event */
-    mov DWORD PTR [rbp-160], 0
     /* int should_quit */
-    mov DWORD PTR [rbp-164], 0
+    mov DWORD PTR [rbp-16], eax
+    /* SDL_Window* window */
+    mov QWORD PTR [rbp-24], rax
+    /* SDL_Renderer* renderer */
+    mov QWORD PTR [rbp-32], rax
+    /* SDL_Event event */
+    mov rcx, 16
+    lea rdi, QWORD PTR [rbp-160]
+    rep stosq
 
     mov rdi, OFFSET .print_launch_args_1
     mov esi, DWORD PTR [rbp-12]
     call printf
 
-    mov r12d, 0
+    xor r12d, r12d
+    mov r13d, DWORD PTR [rbp-12]
+    mov r14, QWORD PTR [rbp-8]
     print_args:
-        cmp r12d, DWORD PTR [rbp-12]
+        cmp r12d, r13d
         jge init_sdl
 
         mov rdi, OFFSET .print_launch_args_2
-        mov rsi, QWORD PTR [rbp-8]
-        mov rsi, QWORD PTR [rsi+r12*8]
+        mov rsi, QWORD PTR [r14+r12*8]
         call printf
 
         inc r12d
@@ -70,8 +72,7 @@ main:
 init_sdl:
     mov edi, [.SDL_INIT_VIDEO]
     call SDL_Init
-    mov DWORD PTR [rbp-16], eax
-    cmp DWORD PTR [rbp-16], 0
+    test eax, eax
     jnz create_window
     call SDL_GetError
     mov rsi, rax
@@ -86,7 +87,7 @@ create_window:
     mov rcx, [.SDL_WINDOW_RESIZABLE]
     call SDL_CreateWindow
     mov QWORD PTR [rbp-24], rax
-    cmp QWORD PTR [rbp-24], 0
+    test rax, rax
     jnz create_renderer
     call SDL_GetError
     mov rsi, rax
@@ -96,10 +97,10 @@ create_window:
 
 create_renderer:
     mov rdi, QWORD PTR [rbp-24]
-    mov rsi, 0
+    xor esi, esi
     call SDL_CreateRenderer
     mov QWORD PTR [rbp-32], rax
-    cmp QWORD PTR [rbp-32], 0
+    test rax, rax
     jnz main_loop
     call SDL_GetError
     mov rsi, rax
@@ -110,16 +111,14 @@ create_renderer:
     main_loop:
         lea rdi, DWORD PTR [rbp-160]
         call SDL_PollEvent
-        mov DWORD PTR [rbp-16], eax
-        cmp DWORD PTR [rbp-16], 0
+        test eax, eax
         jz main_tick
 
-        mov edi, DWORD PTR [rbp-164]
-        mov esi, DWORD PTR [rbp-160]
-        cmp esi, [.SDL_EVENT_QUIT]
-        mov esi, 1
-        cmove edi, esi
-        mov DWORD PTR [rbp-164], edi
+        mov eax, [.SDL_EVENT_QUIT]
+        cmp DWORD PTR [rbp-160], eax
+        sete al
+        movzx eax, al
+        or DWORD PTR [rbp-16], eax
 
         jmp main_loop
     main_tick:
@@ -129,17 +128,14 @@ create_renderer:
         mov cl, 255
         mov r8b, 255
         call SDL_SetRenderDrawColor
-        mov DWORD PTR [rbp-16], eax
 
         mov rdi, QWORD PTR [rbp-32]
         call SDL_RenderClear
-        mov DWORD PTR [rbp-16], eax
 
         mov rdi, QWORD PTR [rbp-32]
         call SDL_RenderPresent
-        mov DWORD PTR [rbp-16], eax
 
-        cmp DWORD PTR [rbp-164], 0
+        cmp DWORD PTR [rbp-16], 0
         jz main_loop
 
 cleanup_renderer:
