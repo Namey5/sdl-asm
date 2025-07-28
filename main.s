@@ -49,10 +49,12 @@ main:
     /* SDL_Renderer* renderer */
     mov QWORD PTR [rbp-32], rax
     /* SDL_Event event */
+    /* SDL_Event is a union padded to 128 bytes, so can zero using 16 u64's: */
     mov rcx, 16
     lea rdi, QWORD PTR [rbp-160]
     rep stosq
 
+    /* Print number of launch args followed by args list: */
     xor eax, eax
     mov rdi, OFFSET .print_launch_args_1
     mov esi, DWORD PTR [rbp-12]
@@ -61,7 +63,7 @@ main:
     xor r12d, r12d
     mov r13d, DWORD PTR [rbp-12]
     mov r14, QWORD PTR [rbp-8]
-    print_args:
+    print_launch_args:
         cmp r12d, r13d
         jge init_sdl
 
@@ -71,13 +73,15 @@ main:
         call printf
 
         inc r12d
-        jmp print_args
+        jmp print_launch_args
 
 init_sdl:
+    /* bool SDL_Init(SDL_InitFlags flags) */
     mov edi, [.SDL_INIT_VIDEO]
     call SDL_Init
     test eax, eax
     jnz create_window
+    /* All SDL calls use the same error handling: */
     call SDL_GetError
     mov rsi, rax
     xor eax, eax
@@ -86,6 +90,7 @@ init_sdl:
     jmp cleanup_sdl
 
 create_window:
+    /* SDL_Window* SDL_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags) */
     mov rdi, OFFSET .window_title
     mov esi, [.window_default_size+0]
     mov edx, [.window_default_size+4]
@@ -94,6 +99,7 @@ create_window:
     mov QWORD PTR [rbp-24], rax
     test rax, rax
     jnz set_window_properties
+
     call SDL_GetError
     mov rsi, rax
     xor eax, eax
@@ -102,18 +108,21 @@ create_window:
     jmp cleanup_sdl
 
 set_window_properties:
+    /* bool SDL_SetWindowMinimumSize(SDL_Window* window, int width, int height) */
     mov rdi, QWORD PTR [rbp-24]
     mov esi, [.window_min_size+0]
     mov edx, [.window_min_size+4]
     call SDL_SetWindowMinimumSize
 
 create_renderer:
+    /* SDL_CreateRenderer(SDL_Window* window, const char* name) */
     mov rdi, QWORD PTR [rbp-24]
     xor esi, esi
     call SDL_CreateRenderer
     mov QWORD PTR [rbp-32], rax
     test rax, rax
     jnz main_loop
+
     call SDL_GetError
     mov rsi, rax
     xor eax, eax
@@ -122,32 +131,37 @@ create_renderer:
     jmp cleanup_window
 
     main_loop:
+        /* bool SDL_PollEvent(SDL_Event* event) */
         lea rdi, DWORD PTR [rbp-160]
         call SDL_PollEvent
         test eax, eax
         jz main_tick
 
+        /* Flag should_quit if the user has requested it (i.e. closed the window). */
         mov eax, [.SDL_EVENT_QUIT]
         cmp DWORD PTR [rbp-160], eax
         sete al
         movzx eax, al
         or DWORD PTR [rbp-16], eax
 
+        /* Completely flush SDL events before running next tick. */
         jmp main_loop
     main_tick:
+        /* bool SDL_SetRenderDrawColor(SDL_Renderer* renderer, u8 r, u8 g, u8 b, u8 a) */
         mov rdi, QWORD PTR [rbp-32]
         mov sil, [.clear_color+0]
         mov dl, [.clear_color+1]
         mov cl, [.clear_color+2]
         mov r8b, [.clear_color+3]
         call SDL_SetRenderDrawColor
-
+        /* bool SDL_RenderClear(SDL_Renderer* renderer) */
         mov rdi, QWORD PTR [rbp-32]
         call SDL_RenderClear
-
+        /* bool SDL_RenderPresent(SDL_Renderer* renderer) */
         mov rdi, QWORD PTR [rbp-32]
         call SDL_RenderPresent
 
+        /* Keep going until the user closes the window. */
         cmp DWORD PTR [rbp-16], 0
         jz main_loop
 
