@@ -1,5 +1,5 @@
 BUILD_DIR=build
-LDFLAGS=-no-pie
+LDFLAGS=-no-pie `pkg-config --libs sdl3`
 ARGS=
 
 .PHONY: all clean run
