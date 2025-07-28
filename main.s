@@ -53,6 +53,7 @@ main:
     lea rdi, QWORD PTR [rbp-160]
     rep stosq
 
+    xor eax, eax
     mov rdi, OFFSET .print_launch_args_1
     mov esi, DWORD PTR [rbp-12]
     call printf
@@ -64,6 +65,7 @@ main:
         cmp r12d, r13d
         jge init_sdl
 
+        xor eax, eax
         mov rdi, OFFSET .print_launch_args_2
         mov rsi, QWORD PTR [r14+r12*8]
         call printf
@@ -78,6 +80,7 @@ init_sdl:
     jnz create_window
     call SDL_GetError
     mov rsi, rax
+    xor eax, eax
     mov rdi, OFFSET .sdl_init_error
     call printf
     jmp cleanup_sdl
@@ -93,6 +96,7 @@ create_window:
     jnz set_window_properties
     call SDL_GetError
     mov rsi, rax
+    xor eax, eax
     mov rdi, OFFSET .create_window_error
     call printf
     jmp cleanup_sdl
@@ -112,6 +116,7 @@ create_renderer:
     jnz main_loop
     call SDL_GetError
     mov rsi, rax
+    xor eax, eax
     mov rdi, OFFSET .create_renderer_error
     call printf
     jmp cleanup_window
