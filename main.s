@@ -27,6 +27,8 @@
     .int 1280
 .window_height:
     .int 720
+.clear_color:
+    .byte 63, 127, 255, 255
 
 .section .text
 
@@ -123,10 +125,10 @@ create_renderer:
         jmp main_loop
     main_tick:
         mov rdi, QWORD PTR [rbp-32]
-        mov sil, 63
-        mov dl, 127
-        mov cl, 255
-        mov r8b, 255
+        mov sil, [.clear_color+0]
+        mov dl, [.clear_color+1]
+        mov cl, [.clear_color+2]
+        mov r8b, [.clear_color+3]
         call SDL_SetRenderDrawColor
 
         mov rdi, QWORD PTR [rbp-32]
