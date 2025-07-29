@@ -1,9 +1,9 @@
 # sdl-asm
 A simple SDL3 app/bootstrapper targeting Linux, written entirely in x64 assembly using the GNU assembler + GCC.
 
-Currently this just creates a window, sets some state and runs a simple event loop, clearing the window using `SDL_Renderer`:
+Currently this just creates a window, sets some state and runs a simple event loop, clearing the window and drawing a centred rectangle using `SDL_Renderer`:
 
-<img width="1285" height="758" alt="wow, a blue window" src="https://github.com/user-attachments/assets/8f08d0b8-a02c-452a-92f9-42d2c9f43bce" />
+<img width="643" height="519" alt="window with blue rectangle" src="https://github.com/user-attachments/assets/c26b291f-7e8b-482e-911e-7177accfee89" />
 
 ## building
 Here's what I used in testing:
